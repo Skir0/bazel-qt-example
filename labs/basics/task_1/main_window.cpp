@@ -1,250 +1,289 @@
-#include <QtWidgets>
 #include <iostream>
 #include "main_window.h"
 #include "Ticket.h"
 #include <random>
 #include <string>
+#include <QtWidgets>
 
-MainWindow::MainWindow()
-{
-
-    countOfTickets_ = 0;
-    selected_row = -1;
-    selected_column = -1;
+MainWindow::MainWindow() {
+    // default selected items
+    selected_row_ = -1;
+    selected_column_ = -1;
 
     QWidget *central_widget = new QWidget;
     setCentralWidget(central_widget);
 
-    count = new QSpinBox(this);
-    count->setValue(countOfTickets_);
+    // count of tickets
+    count_box_ = new QSpinBox(this);
+    count_box_->setValue(0);
 
-    view = new QTableWidget(this);
-    view->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    view->setColumnCount(3);
-    view->setHorizontalHeaderLabels({"Номер", "Название", "Статус"});
-    view->verticalHeader()->setVisible(false);
-    view->setMaximumWidth(460);
+    // represent the info of ticket
+    view_ = new QTableWidget(this);
+    view_->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    view_->setColumnCount(3);
+    view_->setHorizontalHeaderLabels({"Номер", "Название", "Статус"});
+    view_->verticalHeader()->setVisible(false);
 
-    view->setColumnWidth(0, 60);
-    view->setColumnWidth(1, 300);
-    view->setColumnWidth(2, 100);
+    view_->setSelectionBehavior(QAbstractItemView::SelectRows);
+    view_->setSelectionMode(QAbstractItemView::SingleSelection);
+    view_->setSelectionBehavior(QAbstractItemView::SelectRows);
 
+    view_->setColumnWidth(0, 60);
+    view_->setColumnWidth(2, 100);
 
-    // Отключаем возможность изменения размера колонок
-    QHeaderView* header = view->horizontalHeader();
+    QHeaderView *header = view_->horizontalHeader();
     header->setSectionResizeMode(0, QHeaderView::Fixed);
-    header->setSectionResizeMode(1, QHeaderView::Fixed);
+    header->setSectionResizeMode(1, QHeaderView::Stretch);
     header->setSectionResizeMode(2, QHeaderView::Fixed);
+    header->setDefaultAlignment(Qt::AlignCenter);
 
-    number = new QLabel("Номер", this);
-    name = new QLabel("Название", this);
-    name_edit = new QLineEdit(this);
+    // labels that represent selected number and name of ticket
+    number_label_ = new QLabel("Номер", this);
+    name_label_ = new QLabel("Название", this);
 
-    status = new QComboBox(this);
-    status->addItems({"Не выучен", "Повторить", "Выучен"});
+    // field for editing name of selected ticket
+    name_edit_ = new QLineEdit(this);
+
+    // set a status of selected ticket
+    status_box_ = new QComboBox(this);
+    status_box_->addItems({"Не выучен", "Повторить", "Выучен"});
 
     QGroupBox *question_view = new QGroupBox(this);
     QVBoxLayout *qv_layout = new QVBoxLayout();
-    qv_layout->addWidget(number);
-    qv_layout->addWidget(name);
-    qv_layout->addWidget(name_edit);
-    qv_layout->addWidget(status);
+    qv_layout->addWidget(number_label_);
+    qv_layout->addWidget(name_label_);
+    qv_layout->addWidget(name_edit_);
+    qv_layout->addWidget(status_box_);
     question_view->setLayout(qv_layout);
 
-  QHBoxLayout *buttons_layout = new QHBoxLayout();
-next_question_button = new QPushButton("Новый билет", this);
-previous_question_button = new QPushButton("Предыдущий билет", this);
+    // next not green question
+    next_question_button_ = new QPushButton("Новый билет", this);
+    next_question_button_->setFixedSize(140, 40);
 
-next_question_button->setFixedSize(140, 40);
-previous_question_button->setFixedSize(140, 40);
+    // previous question
+    previous_question_button_ = new QPushButton("Предыдущий билет", this);
+    previous_question_button_->setFixedSize(140, 40);
 
-buttons_layout->addStretch();
-buttons_layout->addWidget(next_question_button);
-buttons_layout->addSpacing(20);
-buttons_layout->addWidget(previous_question_button);
-buttons_layout->addStretch();
+    // layout for buttons
+    QHBoxLayout *buttons_layout = new QHBoxLayout();
+    buttons_layout->addStretch();
+    buttons_layout->addWidget(next_question_button_);
+    buttons_layout->addSpacing(20);
+    buttons_layout->addWidget(previous_question_button_);
+    buttons_layout->addStretch();
 
-// Прогресс-бары
-total_progress = new QProgressBar(this);
-total_progress->setValue(0);
-total_progress->setFormat("%p%");
-total_progress->setFixedHeight(20);
-total_progress->setStyleSheet("QProgressBar {"
-                            "height: 20px;"
-                            "border-radius: 10px;"
-                            "background-color: #dcdcdc;"
-                            "}"
-                            "QProgressBar::chunk {"
-                            "background-color: #E0CE06;"  // Желтый цвет
-                            "border-radius: 10px;"
-                            "}");
+    // progress based on not grey tickets
+    total_progress_ = new QProgressBar(this);
+    total_progress_->setValue(0);
+    total_progress_->setFormat("%p%");
+    total_progress_->setFixedHeight(20);
+    total_progress_->setStyleSheet("QProgressBar {"
+        "height: 20px;"
+        "border-radius: 10px;"
+        "background-color: #dcdcdc;"
+        "}"
+        "QProgressBar::chunk {"
+        "background-color: #E0CE06;" // yellow
+        "border-radius: 10px;"
+        "}");
 
-green_progress = new QProgressBar(this);
-green_progress->setValue(0);
-green_progress->setFormat("%p%");
-green_progress->setFixedHeight(20);
-green_progress->setStyleSheet("QProgressBar {"
-                            "height: 20px;"
-                            "border-radius: 10px;"
-                            "background-color: #dcdcdc;"
-                            "}"
-                            "QProgressBar::chunk {"
-                            "background-color: #27A82B;"  // Зеленый цвет
-                            "border-radius: 10px;"
-                            "}");
+    // progress based on green tickets
+    green_progress_ = new QProgressBar(this);
+    green_progress_->setValue(0);
+    green_progress_->setFormat("%p%");
+    green_progress_->setFixedHeight(20);
+    green_progress_->setStyleSheet("QProgressBar {"
+        "height: 20px;"
+        "border-radius: 10px;"
+        "background-color: #dcdcdc;"
+        "}"
+        "QProgressBar::chunk {"
+        "background-color: #27A82B;" // green
+        "border-radius: 10px;"
+        "}");
 
-    // Основной layout
+    // main layout
     QVBoxLayout *main_layout = new QVBoxLayout();
     main_layout->setContentsMargins(5, 5, 5, 5);
 
+    // count layout
     QHBoxLayout *count_layout = new QHBoxLayout();
     QLabel *count_label = new QLabel("Количество билетов", this);
     count_layout->addStretch();
     count_layout->addWidget(count_label);
-    count_layout->addWidget(count);
+    count_layout->addWidget(count_box_);
     count_layout->addStretch();
 
-    // Сборка всего интерфейса
+    // form contents of the app
     main_layout->addLayout(count_layout);
     main_layout->addSpacing(10);
-    main_layout->addWidget(view);
+    main_layout->addWidget(view_);
     main_layout->addSpacing(10);
     main_layout->addLayout(buttons_layout);
     main_layout->addSpacing(10);
     main_layout->addWidget(question_view);
     main_layout->addSpacing(10);
-    main_layout->addWidget(total_progress);
-    main_layout->addWidget(green_progress);
+    main_layout->addWidget(total_progress_);
+    main_layout->addWidget(green_progress_);
 
     central_widget->setLayout(main_layout);
 
     createActions();
 
     setWindowTitle(tr("Билеты МА"));
-    setFixedSize(470, 680);
-
 }
-void MainWindow::updateTicket(int row)
-{
+
+void MainWindow::updateRowColor(QColor color) {
+    for (int i = 0; i < view_->columnCount(); ++i) {
+        view_->item(selected_row_, i)->setBackground(color);
+    }
+}
+
+// update information of selected ticket by its row
+void MainWindow::updateTicket(int row) {
     if (row >= 0 && row < tickets_.size()) {
-        Ticket& ticket = tickets_[row];
+        Ticket &ticket = tickets_[row];
+
+        // delete old ticket
         revision_tickets_.erase(ticket);
-        auto new_status = static_cast<Ticket::Status>(status->currentIndex());
+
+        // update progress bars counts
+        auto new_status = static_cast<Ticket::Status>(status_box_->currentIndex());
         if (ticket.getStatus() != new_status) {
             if (new_status == Ticket::DEFAULT) {
-                grey_count++;
-            }
-            else if (ticket.getStatus() == Ticket::DEFAULT) {
-                grey_count--;
+                grey_count_++;
+            } else if (ticket.getStatus() == Ticket::DEFAULT) {
+                grey_count_--;
             }
         }
 
+        // set new info
         ticket.setName(ticket.getName());
-        ticket.setStatus(static_cast<Ticket::Status>(status->currentIndex()));
+        ticket.setStatus(static_cast<Ticket::Status>(status_box_->currentIndex()));
 
+        // insert new ticket
         if (ticket.getStatus() != Ticket::GREEN) {
             revision_tickets_.insert(ticket);
         }
+
         updateProgress();
     }
 }
 
-void MainWindow::updateProgress()
-{
-    total_progress->setValue((tickets_.size() - grey_count) * 100 / tickets_.size());
-    green_progress->setValue((tickets_.size() - revision_tickets_.size()) * 100 / tickets_.size());
+// update progress bars
+void MainWindow::updateProgress() {
+    total_progress_->setValue((tickets_.size() - grey_count_) * 100 / tickets_.size());
+    green_progress_->setValue((tickets_.size() - revision_tickets_.size()) * 100 / tickets_.size());
 }
 
+// update ticket visually in the app
+void MainWindow::onEnterPressed() {
+    if (selected_row_ >= 0) {
+        // update view table
+        view_->setItem(selected_row_, 1, new QTableWidgetItem(name_edit_->text()));
 
-void MainWindow::onEnterPressed()
-{
-    if (selected_row >= 0) {
-        // Обновляем таблицу
-        view->setItem(selected_row, 1, new QTableWidgetItem(name_edit->text()));
-
-        int new_status = status->currentIndex();
-
-        // Обновляем статус в таблице и векторе
-        view->setItem(selected_row, 2, new QTableWidgetItem(status_data[new_status].first.c_str()));
+        // update row color
+        int new_status = status_box_->currentIndex();
         QColor selected_color = status_data[new_status].second;
-
-        for (int i = 0; i < view->columnCount(); ++i) {
-            view->item(selected_row, i)->setBackground(selected_color);
+        for (int i = 0; i < view_->columnCount(); ++i) {
+            view_->item(selected_row_, i)->setBackground(selected_color);
         }
-        name->setText(name_edit->text());
 
-        // Обновляем данные билета
-        updateTicket(selected_row);
+        // update name label
+        name_label_->setText(name_edit_->text());
 
+        updateTicket(selected_row_);
     }
 }
 
-void MainWindow::next_question()
-{
-    updateTableSize();
+// change status
+void MainWindow::statusChanged() {
+    if (selected_row_ >= 0) {
+        // get current color in format of int
+        int new_status = status_box_->currentIndex();
+
+        // update status in view table
+        view_->setItem(selected_row_, 2, new QTableWidgetItem(status_data[new_status].first.c_str()));
+
+        // update row color
+        QColor selected_color = status_data[new_status].second;
+        updateRowColor(selected_color);
+
+        // update name label
+        name_label_->setText(name_edit_->text());
+
+        updateTicket(selected_row_);
+    }
 }
 
-void MainWindow::change_count(int value)
-{
-    countOfTickets_ = value;
-    updateTableSize();
-}
+// select ticket by certain row of view table
 void MainWindow::chooseTicket(int row) {
+    // push ticket to stack
     tickets_stack_.push(selected_ticket_);
+
+    // remember selected ticket
     selected_ticket_ = tickets_[row];
+
     onCellClicked(row);
 }
-void MainWindow::onCellClicked(int row)
-{
-    view->selectRow(row);
-    selected_row = row;
 
-    QTableWidgetItem *item = view->item(row, 1);
+// update labels by info of selected ticket
+void MainWindow::onCellClicked(int row) {
+    view_->selectRow(row);
+    selected_row_ = row;
+
+    // update labels (and status box)
+    QTableWidgetItem *item = view_->item(row, 1);
     if (item) {
-        name->setText(item->text());
+        name_label_->setText(item->text());
     } else {
-        name->setText("");
+        name_label_->setText("");
     }
-    number->setText(QString::number(row + 1));
-    name_edit->setText(item ? item->text() : "");
-    status->setCurrentIndex(tickets_[row].getStatus());
+    number_label_->setText(QString::number(row + 1));
+    name_edit_->setText(item ? item->text() : "");
+    status_box_->setCurrentIndex(tickets_[row].getStatus());
 }
 
-void MainWindow::onCellDoubleClicked()
-{
+// change status by double click
+void MainWindow::onCellDoubleClicked() {
+    // push ticket to stack
     tickets_stack_.push(selected_ticket_);
-    selected_ticket_ = tickets_[selected_row];
+
+    selected_ticket_ = tickets_[selected_row_];
+
+    // update status
     Ticket::Status new_status;
     if (selected_ticket_.getStatus() == Ticket::GREEN) {
-       new_status = Ticket::YELLOW;
-
-    }
-    else {
+        new_status = Ticket::YELLOW;
+    } else {
         new_status = Ticket::GREEN;
     }
 
-    status->setCurrentIndex(new_status);
-    view->setItem(selected_row, 2, new QTableWidgetItem(status_data[new_status].first.c_str()));
+    status_box_->setCurrentIndex(new_status);
+    view_->setItem(selected_row_, 2, new QTableWidgetItem(status_data[new_status].first.c_str()));
 
-    for (int i = 0; i < view->columnCount(); ++i) {
-        view->item(selected_row, i)->setBackground(status_data[new_status].second);
-    }
+    // update row color
+    updateRowColor(status_data[new_status].second);
 
-    updateTicket(selected_row);
+    updateTicket(selected_row_);
 }
 
-void MainWindow::updateTableSize()
-{
-    number->setText("");
-    name->setText("");
-    name_edit->setText("");
-    green_progress->setValue(0);
-    total_progress->setValue(0);
-    if (!view) {
+// update/create table of tickets
+void MainWindow::updateTable() {
+
+    // set default values of widgets
+    number_label_->setText("");
+    name_label_->setText("");
+    name_edit_->setText("");
+    green_progress_->setValue(0);
+    total_progress_->setValue(0);
+
+    if (!view_) {
         std::cerr << "Ошибка: view не инициализирован" << std::endl;
         return;
     }
 
+    // clear containers
     if (!tickets_.empty()) {
         tickets_.clear();
     }
@@ -255,77 +294,97 @@ void MainWindow::updateTableSize()
         revision_tickets_.clear();
     }
 
-    view->setRowCount(count->value());
-    grey_count = count->value();
+    // set row count
+    view_->setRowCount(count_box_->value());
 
-    for (int row = 0; row < count->value(); row++) {
+
+    grey_count_ = count_box_->value();
+
+    // set data
+    for (int row = 0; row < count_box_->value(); row++) {
         QTableWidgetItem *item0 = new QTableWidgetItem(
             QString("%1").arg(row + 1));
-        view->setItem(row, 0, item0);
+        view_->setItem(row, 0, item0);
+
         QTableWidgetItem *item1 = new QTableWidgetItem(
             QString("Билет %1").arg(row + 1));
-        view->setItem(row, 1, item1);
+        view_->setItem(row, 1, item1);
+
         QTableWidgetItem *item2 = new QTableWidgetItem(
             QString("Не выучен"));
-        view->setItem(row, 2, item2);
+        view_->setItem(row, 2, item2);
 
         auto ticket = Ticket(row + 1, "Билет" + std::to_string(row + 1));
         std::cout << "ticket " << ticket.getName() << std::endl;
+
+        // add ticket to containers
         tickets_.push_back(ticket);
         revision_tickets_.emplace(ticket);
 
-        for (int i = 0; i < view->columnCount(); ++i) {
-            view->item(row, i)->setBackground(status_data[0].second);
+        // update row color
+        for (int i = 0; i < view_->columnCount(); ++i) {
+            view_->item(row, i)->setBackground(status_data[0].second);
         }
-
     }
 }
 
+// get random not green ticket
 void MainWindow::getRandomTicket() {
+    // check if exists not green ticket
     if (revision_tickets_.empty()) {
         std::cout << "Все билеты повторены" << std::endl;
         return;
     }
+
+    // selected ticket is random ticket
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::cout << "size: " << revision_tickets_.size() << std::endl;
     std::uniform_int_distribution<> distr(0, revision_tickets_.size() - 1);
     int const random_number = distr(gen);
     tickets_stack_.push(selected_ticket_);
     auto it = revision_tickets_.begin();
     std::advance(it, random_number);
     selected_ticket_ = *it;
+
+    // choose the ticket (imitate clicking)
     onCellClicked(selected_ticket_.getNumber() - 1);
 }
 
+// get previous ticket
 void MainWindow::getPreviousTicket() {
+
+    // check if was some ticket chosen before
     if (tickets_stack_.empty()) {
         std::cout << "Не один билет не был выбран" << std::endl;
         return;
     }
+    // get previous ticket as top element of stack
     selected_ticket_ = tickets_stack_.top();
-    std::cout << "chosen: " <<selected_ticket_.getNumber() << std::endl;
+    std::cout << "chosen: " << selected_ticket_.getNumber() << std::endl;
     tickets_stack_.pop();
+
+    // choose the ticket (imitate clicking)
     onCellClicked(selected_ticket_.getNumber() - 1);
 }
 
 
-
-
-void MainWindow::createActions()
-{
-    if (count && view && name_edit) {
-        connect(count, QOverload<int>::of(&QSpinBox::valueChanged),
-                this, &MainWindow::change_count);
-        connect(name_edit, &QLineEdit::returnPressed,
+void MainWindow::createActions() {
+    if (count_box_ && view_ && name_edit_) {
+        connect(count_box_, QOverload<int>::of(&QSpinBox::valueChanged),
+                this, &MainWindow::updateTable);
+        connect(name_edit_, &QLineEdit::returnPressed,
                 this, &MainWindow::onEnterPressed);
-        connect(view, &QTableWidget::cellClicked,
+        connect(view_, &QTableWidget::cellClicked,
                 this, &MainWindow::chooseTicket);
-        connect(view, &QTableWidget::cellDoubleClicked,
+        connect(view_, &QTableWidget::cellDoubleClicked,
                 this, &MainWindow::onCellDoubleClicked);
-        connect(next_question_button, &QPushButton::clicked,
+        connect(next_question_button_, &QPushButton::clicked,
                 this, &MainWindow::getRandomTicket);
-        connect(previous_question_button, &QPushButton::clicked,
+        connect(previous_question_button_, &QPushButton::clicked,
                 this, &MainWindow::getPreviousTicket);
+        connect(previous_question_button_, &QPushButton::clicked,
+                this, &MainWindow::getPreviousTicket);
+        connect(status_box_, &QComboBox::currentTextChanged,
+                this, &MainWindow::statusChanged);
     }
 }

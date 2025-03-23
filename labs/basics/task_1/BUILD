@@ -6,8 +6,8 @@ qt_cc_library(
         "main_window.cpp",
     ],
     hdrs = [
-        "main_window.h",
         "Ticket.h",
+        "main_window.h",
     ],
     deps = [
         "@rules_qt//:qt_core",
@@ -22,6 +22,7 @@ qt_cc_binary(
     deps = [
         ":main_window",
         "@rules_qt//:qt_core",
+        "@rules_qt//:qt_gui",
         "@rules_qt//:qt_widgets",
     ],
 )

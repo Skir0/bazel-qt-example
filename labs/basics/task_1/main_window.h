@@ -1,10 +1,11 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
-#include <QKeyEvent>
+#include <qmainwindow.h>
+
 #include "Ticket.h"
 #include <set>
+// #include <stack>
 
 class Ticket;
 QT_BEGIN_NAMESPACE
@@ -21,32 +22,25 @@ class QPushButton;
 
 QT_END_NAMESPACE
 
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
     MainWindow();
 
-    void updateStatus(QColor color);
+    void updateRowColor(QColor color);
 
-    void highlightRow(int row, const QColor &color);
-
-    void onEnterPressed();
     void updateTicket(int row);
 
     void updateProgress();
 
 private slots:
-    void next_question();
-
-    void change_count(int value);
 
     void chooseTicket(int row);
 
     void onCellClicked(int row);
 
-    void updateTableSize();
+    void updateTable();
 
     void getRandomTicket();
 
@@ -54,31 +48,35 @@ private slots:
 
     void onCellDoubleClicked();
 
+    void statusChanged();
+
+    void onEnterPressed();
 
 
 private:
     void createActions();
-    void createMenus();
 
+    // widgets
+    QTableWidget *view_;
+    QLabel *number_label_;
+    QLabel *name_label_;
+    QComboBox *status_box_;
+    QLineEdit *name_edit_;
+    QProgressBar *total_progress_;
+    QProgressBar *green_progress_;
+    QSpinBox *count_box_;
+    QPushButton *next_question_button_;
+    QPushButton *previous_question_button_;
 
-    QTableWidget *view;
-    QLabel *number;
-    QLabel *name;
-    QComboBox *status;
-    QLineEdit *name_edit;
-    QProgressBar *total_progress;
-    QProgressBar *green_progress;
-    QSpinBox *count;
-    QPushButton *next_question_button;
-    QPushButton *previous_question_button;
-
-
-    int selected_row;
-    int selected_column;
-    int grey_count;
-
+    // selected items
+    int selected_row_;
+    int selected_column_;
     Ticket selected_ticket_;
-    int countOfTickets_ = 0;
+
+    // total progress support field
+    int grey_count_;
+
+    // containers
     std::vector<Ticket> tickets_;
     std::set<Ticket> revision_tickets_;
     std::stack<Ticket> tickets_stack_;

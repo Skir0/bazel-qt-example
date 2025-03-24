@@ -142,7 +142,7 @@ void MainWindow::addNewEvent() {
 
     // search the time which is greater than selected_time and insert the event before that time
     while (it != selected_date_events.end()) {
-        if (it->time > selected_time_.toStdString()) {
+        if (it->time.compare(selected_time_) > 0) {
             break;
         }
         ++it;

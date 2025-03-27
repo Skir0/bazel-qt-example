@@ -5,7 +5,7 @@
 
 #include "Ticket.h"
 #include <set>
-// #include <stack>
+#include <stack>
 
 class Ticket;
 QT_BEGIN_NAMESPACE

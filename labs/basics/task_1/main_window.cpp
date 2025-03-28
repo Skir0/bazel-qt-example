@@ -220,6 +220,7 @@ void MainWindow::statusChanged() {
 void MainWindow::chooseTicket(int row) {
     // push ticket to stack
     tickets_stack_.push(selected_ticket_);
+    std::cout << "add to stack in choose ticket: " << tickets_stack_.top().getNumber() << std::endl;
 
     // remember selected ticket
     selected_ticket_ = tickets_[row];
@@ -242,6 +243,7 @@ void MainWindow::onCellClicked(int row) {
     number_label_->setText(QString::number(row + 1));
     name_edit_->setText(item ? item->text() : "");
     status_box_->setCurrentIndex(tickets_[row].getStatus());
+    std::cout << "end of cell clicked" << std::endl;
 }
 
 // change status by double click
@@ -284,12 +286,10 @@ void MainWindow::updateTable() {
     }
 
     // clear containers
-    if (!tickets_.empty()) {
-        tickets_.clear();
-    }
     while (!tickets_stack_.empty()) {
         tickets_stack_.pop();
     }
+    std::cout << "stack: " << tickets_stack_.size() << std::endl;
     if (!revision_tickets_.empty()) {
         revision_tickets_.clear();
     }
@@ -326,6 +326,9 @@ void MainWindow::updateTable() {
             view_->item(row, i)->setBackground(status_data[0].second);
         }
     }
+    selected_ticket_ = tickets_[0];
+    onCellClicked(0);
+
 }
 
 // get random not green ticket
@@ -335,13 +338,14 @@ void MainWindow::getRandomTicket() {
         std::cout << "Все билеты повторены" << std::endl;
         return;
     }
-
     // selected ticket is random ticket
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> distr(0, revision_tickets_.size() - 1);
     int const random_number = distr(gen);
     tickets_stack_.push(selected_ticket_);
+    std::cout << "add to stack in random ticket: " << selected_ticket_.getNumber() << std::endl;
+
     auto it = revision_tickets_.begin();
     std::advance(it, random_number);
     selected_ticket_ = *it;
@@ -360,7 +364,8 @@ void MainWindow::getPreviousTicket() {
     }
     // get previous ticket as top element of stack
     selected_ticket_ = tickets_stack_.top();
-    std::cout << "chosen: " << selected_ticket_.getNumber() << std::endl;
+    std::cout << "selected ticket : " << selected_ticket_.getNumber() << std::endl;
+
     tickets_stack_.pop();
 
     // choose the ticket (imitate clicking)
@@ -380,8 +385,6 @@ void MainWindow::createActions() {
                 this, &MainWindow::onCellDoubleClicked);
         connect(next_question_button_, &QPushButton::clicked,
                 this, &MainWindow::getRandomTicket);
-        connect(previous_question_button_, &QPushButton::clicked,
-                this, &MainWindow::getPreviousTicket);
         connect(previous_question_button_, &QPushButton::clicked,
                 this, &MainWindow::getPreviousTicket);
         connect(status_box_, &QComboBox::currentTextChanged,

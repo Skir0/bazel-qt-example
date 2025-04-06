@@ -10,7 +10,7 @@ class PaintWidget : public QWidget {
 public:
     explicit PaintWidget(QWidget *parent = nullptr);
 
-    void SetPoint(const QPoint &point, bool isLastPoint);
+    void SetVertex(const QPoint &vertex, bool isLastVertex);
 
 
 signals:
@@ -26,7 +26,7 @@ private:
     void mousePressEvent(QMouseEvent *event) override;
 
     // stores the point position
-    QPoint last_point_ = QPoint(-10, -10);
+    QPoint last_vertex_ = QPoint(-10, -10);
 
     QPixmap m_buffer_;  // Stores all drawings
     void initializeBuffer();

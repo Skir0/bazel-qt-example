@@ -49,21 +49,31 @@ void Controller::AddPolygon(const Polygon &polygon) {
 }
 
 void Controller::AddVertexToLastPolygon(const QPoint &new_vertex) {
-    current_polygon_.push_back(new_vertex);
+    current_polygon_.AddVertex(new_vertex);
 }
 
 void Controller::UpdateLastPolygon(const QPoint &new_vertex) {
+    auto& last_polygon = polygons_.back().GetVertices().back();
+    last_polygon = new_vertex;
 }
 
-//
-// void Controller::IntersectRays(std::vector<Ray> *rays) {
-//
-// }
-//
-// void Controller::RemoveAdjacentRays(std::vector<Ray> *rays) {
-//
-// }
-//
+
+void Controller::IntersectRays(std::vector<Ray> *rays) {
+    for (auto polygon: polygons_) {
+        for (auto& ray: *rays) {
+            auto intersect_result = polygon.IntersectRay(ray);
+            if (Polygon::GetDistance(ray.GetBegin(), intersect_result.value()) <
+                Polygon::GetDistance(ray.GetBegin(), ray.GetEnd())) {
+                ray.SetEnd(intersect_result.value());
+            }
+        }
+    }
+}
+
+void Controller::RemoveAdjacentRays(std::vector<Ray> *rays) {
+
+}
+
 // Polygon Controller::CreateLightArea() {
 //
 // }
@@ -91,10 +101,6 @@ std::vector<Ray> Controller::CastRays() {
     return rays;
 }
 
-void Controller::IntersectRays(std::vector<Ray>* rays) {
-
-
-}
 void Controller::ModeChanged() {
     std::cout << "mode changed" << std::endl;
 
@@ -131,11 +137,11 @@ void Controller::MouseMoveEvent(QPoint pos) {
 void Controller::MouseLeftClicked(QPoint pos) {
     if (mode_ == POLYGONS) {
         std::cout << pos.x() << " " << pos.y() << std::endl;
-        if (current_polygon_.empty()) {
+        if (current_polygon_.IsEmpty()) {
             first_vertex_ = pos;
         }
         AddVertexToLastPolygon(pos);
-        paint_widget_->SetPoint(pos, false);
+        paint_widget_->SetVertex(pos, false);
         paint_widget_->update();
     }
 }
@@ -143,12 +149,12 @@ void Controller::MouseLeftClicked(QPoint pos) {
 void Controller::MouseRightClicked(QPoint pos) {
     if (mode_ == POLYGONS) {
 
-        paint_widget_->SetPoint(first_vertex_, true);
+        paint_widget_->SetVertex(first_vertex_, true);
         paint_widget_->update();
 
         // add polygon ...
         AddPolygon(current_polygon_);
-        current_polygon_.clear();
+        current_polygon_.Clear();
     }
 }
 

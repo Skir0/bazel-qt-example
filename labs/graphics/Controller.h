@@ -62,7 +62,7 @@ private slots:
 private:
     QPoint light_source_;
     Mode mode_;
-    std::vector<QPoint> current_polygon_;
+    Polygon current_polygon_ = Polygon();
     std::vector<Polygon> polygons_;
     QPoint first_vertex_;
 
@@ -71,6 +71,7 @@ private:
     PaintWidget *paint_widget_;
 
     void CreateActions();
+
 
 };
 #endif //CONTROLLER_H

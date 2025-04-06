@@ -14,23 +14,23 @@ void PaintWidget::initializeBuffer() {
     m_buffer_ = QPixmap(QSize(800, 600));
     m_buffer_.fill(Qt::white);  // Clear with background color
 }
-void PaintWidget::SetPoint(const QPoint &point, bool isLastPoint) {
+void PaintWidget::SetVertex(const QPoint &vertex, bool isLastVertex) {
     // Draw to buffer first
     QPainter bufferPainter(&m_buffer_);
     bufferPainter.setPen(Qt::black);
     bufferPainter.setBrush(Qt::black);
-    if (last_point_ != QPoint(-10, -10)) {
-        bufferPainter.drawLine(last_point_.rx(), last_point_.ry(), point.x(), point.y());
+    if (last_vertex_ != QPoint(-10, -10)) {
+        bufferPainter.drawLine(last_vertex_.rx(), last_vertex_.ry(), vertex.x(), vertex.y());
     }
     // bufferPainter.drawEllipse(point, 3, 3);
     bufferPainter.end();
     update();  // Trigger widget repaint
 
-    if (!isLastPoint) {
-        last_point_ = point;
+    if (!isLastVertex) {
+        last_vertex_ = vertex;
     }
     else {
-        last_point_ = QPoint(-10, -10);
+        last_vertex_ = QPoint(-10, -10);
     }
 }
 
@@ -43,7 +43,7 @@ void PaintWidget::paintEvent(QPaintEvent *event) {
 
     // draw temporary overlays
     painter.setPen(Qt::blue);
-    painter.drawEllipse(last_point_, 5, 5);
+    painter.drawEllipse(last_vertex_, 5, 5);
 
 }
 

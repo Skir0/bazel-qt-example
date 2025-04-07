@@ -3,10 +3,10 @@
 #include <QtWidgets>
 
 Controller::Controller() {
+
     // enable mouse tracking for the main window
-
-
     setMouseTracking(true);
+
     QWidget *central_widget = new QWidget;
     setCentralWidget(central_widget);
 
@@ -49,34 +49,14 @@ void Controller::AddPolygon(const Polygon &polygon) {
 }
 
 void Controller::AddVertexToLastPolygon(const QPoint &new_vertex) {
-    current_polygon_.AddVertex(new_vertex);
+    Polygon& last_polygon = polygons_[polygons_.size() - 1];
+    last_polygon.AddVertex(new_vertex);
 }
-
+// TODO
 void Controller::UpdateLastPolygon(const QPoint &new_vertex) {
-    auto& last_polygon = polygons_.back().GetVertices().back();
-    last_polygon = new_vertex;
+    // auto& last_polygon = current_polygon_.;
+    // last_polygon = new_vertex;
 }
-
-
-void Controller::IntersectRays(std::vector<Ray> *rays) {
-    for (auto polygon: polygons_) {
-        for (auto& ray: *rays) {
-            auto intersect_result = polygon.IntersectRay(ray);
-            if (Polygon::GetDistance(ray.GetBegin(), intersect_result.value()) <
-                Polygon::GetDistance(ray.GetBegin(), ray.GetEnd())) {
-                ray.SetEnd(intersect_result.value());
-            }
-        }
-    }
-}
-
-void Controller::RemoveAdjacentRays(std::vector<Ray> *rays) {
-
-}
-
-// Polygon Controller::CreateLightArea() {
-//
-// }
 
 std::vector<Ray> Controller::CastRays() {
     std::vector<Ray> rays;
@@ -86,6 +66,7 @@ std::vector<Ray> Controller::CastRays() {
             // count angle
             double angle = qAtan2(vertex.y() - light_source_.y(),
                      vertex.x() - light_source_.x());
+            std::cout << angle << std::endl;
 
             // create rays
             Ray ray1 = Ray(light_source_, vertex, angle);
@@ -101,9 +82,46 @@ std::vector<Ray> Controller::CastRays() {
     return rays;
 }
 
+void Controller::IntersectRays(std::vector<Ray> *rays) {
+    for (auto polygon: polygons_) {
+        for (auto& ray: *rays) {
+            auto intersect_result = polygon.IntersectRay(ray);
+
+            if (intersect_result) {
+                std::cout << "dis1: " << Polygon::GetDistance(ray.GetBegin(), intersect_result.value()) << std::endl;
+                std::cout << "dist2 " << Polygon::GetDistance(ray.GetBegin(), ray.GetEnd()) << std::endl;
+                if (Polygon::GetDistance(ray.GetBegin(), intersect_result.value()) <
+                    Polygon::GetDistance(ray.GetBegin(), ray.GetEnd())) {
+                        ray.SetEnd(intersect_result.value());
+                }
+            }
+
+        }
+    }
+}
+
+void Controller::RemoveAdjacentRays(std::vector<Ray> *rays) {
+}
+
+Polygon Controller::CreateLightArea() {
+    std::vector<Ray> rays = CastRays();
+    paint_widget_->PaintRays(rays);
+    IntersectRays(&rays);
+    RemoveAdjacentRays(&rays);
+    std::sort(rays.begin(), rays.end(), [](const Ray &ray1, const Ray &ray2) {
+        return ray1.GetAngle() < ray2.GetAngle();
+    });
+    std::vector<QPoint> vertices;
+    for (auto ray: rays) {
+        vertices.push_back(ray.GetEnd());
+    }
+    return Polygon(vertices);
+}
+
+
+
 void Controller::ModeChanged() {
     std::cout << "mode changed" << std::endl;
-
     if (mode_box_->currentIndex() == LIGHT) {
         // create a small red circle cursor
         QPixmap pixmap(16, 16);
@@ -121,6 +139,8 @@ void Controller::ModeChanged() {
 
         mode_ = LIGHT;
     } else {
+        paint_widget_->ClearRaysBuffer();
+        paint_widget_->update();
         // Restore default cursor
         setCursor(Qt::ArrowCursor);
         mode_ = POLYGONS;
@@ -130,31 +150,33 @@ void Controller::ModeChanged() {
 void Controller::MouseMoveEvent(QPoint pos) {
     if (mode_ == LIGHT) {
         light_source_ = pos;
-        paint_widget_->update();
+        std::vector<Ray> rays = CastRays();
+        // IntersectRays(&rays);
+        // paint_widget_->PaintRays(rays);
+        Polygon polygon = CreateLightArea();
+        paint_widget_->PaintPolygon(polygon);
     }
 }
 
 void Controller::MouseLeftClicked(QPoint pos) {
     if (mode_ == POLYGONS) {
         std::cout << pos.x() << " " << pos.y() << std::endl;
-        if (current_polygon_.IsEmpty()) {
-            first_vertex_ = pos;
+        if (is_right_clicked) {
+            std::cout << "start" << std::endl;
+            Polygon polygon;
+            AddPolygon(polygon);
+            is_right_clicked = false;
         }
         AddVertexToLastPolygon(pos);
-        paint_widget_->SetVertex(pos, false);
-        paint_widget_->update();
+        paint_widget_->PaintPolygon(polygons_[polygons_.size() - 1]);
+
     }
 }
 
 void Controller::MouseRightClicked(QPoint pos) {
     if (mode_ == POLYGONS) {
-
-        paint_widget_->SetVertex(first_vertex_, true);
-        paint_widget_->update();
-
-        // add polygon ...
-        AddPolygon(current_polygon_);
-        current_polygon_.Clear();
+        is_right_clicked = true;
+        std::cout << "light " << light_source_.x() << " " << light_source_.y() << std::endl;
     }
 }
 

@@ -1,47 +1,80 @@
-//
-// Created by Kirill Smychok on 6.04.25.
-//
-
 #include "Polygon.h"
 
-bool Polygon::IsIntersected(QPoint p1, QPoint p2, QPoint p3, QPoint p4, QPoint &intersection) {
-    double n;
-    // to escape a division by zero
-    if (p2.y() - p1.y() != 0) {
-        // convert "line by 2 points" to "general equation of line" and check intersection
-        float q = (p2.x() - p1.x()) / (p1.y() - p2.y());
-        float sn = (p3.x() - p4.x()) + (p3.y() - p4.rx()) * q;
-        if (!sn) {
-            return 0;
+#include <iostream>
+#include <ostream>
+
+bool Polygon::IsIntersected(QPoint p1, QPoint p2, QPoint p3, QPoint p4, QPoint& intersection) {
+    const double epsilon = 1e-10;
+
+    // calculate vectors between points
+    QPoint r = p2 - p1;
+    QPoint s = p4 - p3;
+    QPoint qp = p3 - p1;
+
+    // calculate cross products
+
+    // (x2-x1)(y4-y3) - (y2-y1)(x4-x3)
+    double rxs = r.x() * s.y() - r.y() * s.x();
+    // (x3-x1)(y2-y1) - (y3-y1)(x2-x1)
+    double qpxr = qp.x() * r.y() - qp.y() * r.x();
+
+    // collinear case
+    if (std::abs(rxs) < epsilon && std::abs(qpxr) < epsilon) {
+        double t0 = (qp.x() * r.x() + qp.y() * r.y()) / (r.x() * r.x() + r.y() * r.y());
+        double t1 = t0 + (s.x() * r.x() + s.y() * r.y()) / (r.x() * r.x() + r.y() * r.y());
+
+        if (t0 > t1) std::swap(t0, t1);
+
+        if (t0 <= 1.0 + epsilon && t1 >= 0.0 - epsilon) {
+            double t = std::max(0.0, t0);
+            intersection.setX(p1.x() + r.x() * t);
+            intersection.setY(p1.y() + r.y() * t);
+            return true;
         }
-        float fn = (p3.x() - p1.x()) + (p3.y() - p1.y()) * q;
-        n = fn / sn;
-    } else {
-        if (!(p3.y() - p4.y())) {
-            return 0;
-        }
-        n = (p3.y() - p1.y()) / (p3.y() - p4.y());
+        return false;
     }
-    intersection = QPoint(p3.x() + (p4.x() - p3.x()) * n, p3.y() + (p4.y() - p3.y()) * n);
-    return 1;
+
+    // parallel case
+    if (std::abs(rxs) < epsilon) {
+        return false;
+    }
+
+    // calculate intersection parameters
+    double t = (qp.x() * s.y() - qp.y() * s.x()) / rxs;
+    double u = qpxr / rxs;
+
+    // check if intersection occurs within both segments
+    if (t >= -epsilon && t <= 1.0 + epsilon &&
+        u >= -epsilon && u <= 1.0 + epsilon) {
+        intersection.setX(p1.x() + r.x() * t);
+        intersection.setY(p1.y() + r.y() * t);
+        std::cout << "intersection: " << intersection.x() << " " << intersection.y() << std::endl;
+        return true;
+    }
+
+    return false;
 }
 
-// TODO check
-std::optional<QPoint> Polygon::IntersectRay(const Ray &ray) {
-    std::optional<QPoint> intersection_vertex = std::nullopt;
+std::optional<QPoint> Polygon::IntersectRay(const Ray& ray) {
+    std::optional<QPoint> closest_intersection = std::nullopt;
     double min_distance = std::numeric_limits<double>::max();
 
-    for (int i = 1; i < vertices_.size(); ++i) {
+    QPoint ray_direction = ray.GetEnd() - ray.GetBegin();
+    QPoint far_point = ray.GetBegin() + ray_direction * 1000.0;
+
+    for (size_t i = 0; i < vertices_.size(); ++i) {
+        size_t j = (i + 1) % vertices_.size();
         QPoint intersection;
-        if (IsIntersected(vertices_[i - 1], vertices_[i], ray.GetBegin(), ray.GetEnd(), intersection)) {
-            double current_distance = GetDistance(intersection, ray.GetBegin());
-            if (current_distance < min_distance) {
-                min_distance = current_distance;
-                intersection_vertex = intersection;
+        if (IsIntersected(vertices_[i], vertices_[j], ray.GetBegin(), far_point, intersection)) {
+            double dist = GetDistance(intersection, ray.GetBegin());
+            if (dist < min_distance) {
+                min_distance = dist;
+                closest_intersection = intersection;
             }
         }
     }
-    return intersection_vertex;
+
+    return closest_intersection;
 }
 
 Polygon::Polygon(const std::vector<QPoint> &vertices) {

@@ -52,6 +52,8 @@ public:
 
 
 
+
+
 private slots:
     void ModeChanged();
 
@@ -62,13 +64,13 @@ private slots:
 private:
     QPoint light_source_;
     Mode mode_;
-    Polygon current_polygon_ = Polygon();
-    std::vector<Polygon> polygons_;
-    QPoint first_vertex_;
+    bool is_right_clicked = true;
 
     // widgets
     QComboBox *mode_box_;
     PaintWidget *paint_widget_;
+    std::vector<Polygon> polygons_;
+
 
     void CreateActions();
 

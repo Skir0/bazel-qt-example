@@ -1,7 +1,9 @@
 #include <QtWidgets/QApplication>
-#include <QtWidgets/QPushButton>
+#include <QtWidgets>
 
 #include "Controller.h"
+#include "PaintWidget.h"
+
 
 int main(int argc, char** argv) {
     QApplication a(argc, argv);

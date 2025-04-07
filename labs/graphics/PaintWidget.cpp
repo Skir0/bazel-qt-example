@@ -4,59 +4,76 @@
 #include <qstatusbar.h>
 #include <QtGui/qpainter.h>
 
+#include "Controller.h"
+
 PaintWidget::PaintWidget(QWidget *parent) : QWidget(parent) {
-    setMouseTracking(true);  // Enable mouse move events without button press
+    setMouseTracking(true); // Enable mouse move events without button press
     initializeBuffer();
 }
 
 void PaintWidget::initializeBuffer() {
     // TODO fix size
-    m_buffer_ = QPixmap(QSize(800, 600));
-    m_buffer_.fill(Qt::white);  // Clear with background color
+    polygons_buffer_ = QPixmap(QSize(800, 600));
+    polygons_buffer_.fill(Qt::white); // Clear with background color
+    rays_buffer_ = QPixmap(size());  // Initialize rays_buffer_
+    rays_buffer_.fill(Qt::transparent);
 }
-void PaintWidget::SetVertex(const QPoint &vertex, bool isLastVertex) {
-    // Draw to buffer first
-    QPainter bufferPainter(&m_buffer_);
+
+
+void PaintWidget::PaintPolygon(Polygon polygon) {
+    QPainter bufferPainter(&polygons_buffer_);
     bufferPainter.setPen(Qt::black);
     bufferPainter.setBrush(Qt::black);
-    if (last_vertex_ != QPoint(-10, -10)) {
-        bufferPainter.drawLine(last_vertex_.rx(), last_vertex_.ry(), vertex.x(), vertex.y());
+    std::vector<QPoint> vertices = polygon.GetVertices();
+    for (int i = 0; i < vertices.size() - 1; i++) {
+        bufferPainter.drawLine(vertices[i], vertices[i + 1]);
     }
-    // bufferPainter.drawEllipse(point, 3, 3);
-    bufferPainter.end();
-    update();  // Trigger widget repaint
-
-    if (!isLastVertex) {
-        last_vertex_ = vertex;
-    }
-    else {
-        last_vertex_ = QPoint(-10, -10);
-    }
+    // TODO есть лишняя линия, починить
+    bufferPainter.drawLine(vertices[0], vertices[vertices.size() - 1]);
+    update();
 }
+
+void PaintWidget::ClearRaysBuffer() {
+    rays_buffer_.fill(Qt::transparent);  // Clear previous rays
+}
+void PaintWidget::PaintRays(std::vector<Ray> rays) {
+    if (rays_buffer_.isNull() || rays_buffer_.size() != size()) {
+        rays_buffer_ = QPixmap(size());  // Recreate if invalid or wrong size
+    }
+    ClearRaysBuffer();
+    QPainter bufferPainter(&rays_buffer_);
+    if (!bufferPainter.isActive()) {
+        qWarning() << "Failed to begin painting on rays_buffer_";
+        return;
+    }
+
+    bufferPainter.setPen(Qt::red);  // Make rays visible (e.g., red)
+    for (const auto& ray : rays) {
+        bufferPainter.drawLine(ray.GetBegin(), ray.GetEnd());
+    }
+    update();
+}
+
 
 void PaintWidget::paintEvent(QPaintEvent *event) {
     Q_UNUSED(event);
     QPainter painter(this);
-
     // draw the buffer content
-    painter.drawPixmap(0, 0, m_buffer_);
+    painter.drawPixmap(0, 0, polygons_buffer_);
 
-    // draw temporary overlays
-    painter.setPen(Qt::blue);
-    painter.drawEllipse(last_vertex_, 5, 5);
+    painter.drawPixmap(0, 0, rays_buffer_);
 
 }
 
 void PaintWidget::mouseMoveEvent(QMouseEvent *event) {
-    emit mouseMoved(event->pos());  // Emit the position
+    emit mouseMoved(event->pos()); // Emit the position
     QWidget::mouseMoveEvent(event);
 }
 
 void PaintWidget::mousePressEvent(QMouseEvent *event) {
     if (event->button() == Qt::LeftButton) {
         emit leftClicked(event->pos());
-    }
-    else if (event->button() == Qt::RightButton) {
+    } else if (event->button() == Qt::RightButton) {
         emit rightClicked(event->pos());
     }
     QWidget::mousePressEvent(event);

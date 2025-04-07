@@ -4,13 +4,20 @@
 #include <QWidget>
 #include <QMouseEvent>
 
+#include "Polygon.h"
+
 class PaintWidget : public QWidget {
     Q_OBJECT
 
 public:
     explicit PaintWidget(QWidget *parent = nullptr);
 
-    void SetVertex(const QPoint &vertex, bool isLastVertex);
+    void PaintPolygon(Polygon polygon);
+
+    void ClearRaysBuffer();
+
+    void PaintRays(std::vector<Ray> rays);
+
 
 
 signals:
@@ -25,12 +32,11 @@ private:
 
     void mousePressEvent(QMouseEvent *event) override;
 
-    // stores the point position
-    QPoint last_vertex_ = QPoint(-10, -10);
+    // buffers
+    QPixmap polygons_buffer_;  // Stores all drawings
+    QPixmap rays_buffer_;  // Stores all drawings
 
-    QPixmap m_buffer_;  // Stores all drawings
     void initializeBuffer();
-
 
 };
 

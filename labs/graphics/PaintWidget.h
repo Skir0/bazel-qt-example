@@ -21,9 +21,9 @@ public:
 
 
 signals:
-    void mouseMoved(QPoint pos); // Changed to QPoint
-    void rightClicked(QPoint pos);
-    void leftClicked(QPoint pos);
+    void mouseMoved(QPointF pos); // Changed to QPointF
+    void rightClicked(QPointF pos);
+    void leftClicked(QPointF pos);
 
 private:
     void paintEvent(QPaintEvent *event) override;

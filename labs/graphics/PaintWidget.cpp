@@ -3,6 +3,7 @@
 #include <iostream>
 #include <qstatusbar.h>
 #include <QtGui/qpainter.h>
+#include <QtGui/qpainterpath.h>
 
 #include "Controller.h"
 
@@ -22,14 +23,30 @@ void PaintWidget::initializeBuffer() {
 
 void PaintWidget::PaintPolygon(Polygon polygon) {
     QPainter bufferPainter(&polygons_buffer_);
-    bufferPainter.setPen(Qt::black);
+
+    QPen pen(Qt::black);
+    pen.setWidth(2);
+    bufferPainter.setPen(pen);
     bufferPainter.setBrush(Qt::black);
-    std::vector<QPoint> vertices = polygon.GetVertices();
-    for (int i = 0; i < vertices.size() - 1; i++) {
-        bufferPainter.drawLine(vertices[i], vertices[i + 1]);
+
+    std::vector<QPointF> vertices = polygon.GetVertices();
+
+    if (vertices.size() < 2) {
+        return;
+
     }
-    // TODO есть лишняя линия, починить
-    bufferPainter.drawLine(vertices[0], vertices[vertices.size() - 1]);
+    // Create a path to define the polygon
+    QPainterPath path;
+    path.moveTo(vertices[0]);
+
+    for (size_t i = 1; i < vertices.size(); ++i) {
+        path.lineTo(vertices[i]);
+    }
+
+    path.closeSubpath();
+
+    bufferPainter.drawPath(path);
+
     update();
 }
 

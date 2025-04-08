@@ -29,16 +29,16 @@ public:
 
     ~Controller();
 
-    QPoint GetLightSource();
-    void SetLightSource(QPoint lightSource);
+    QPointF GetLightSource();
+    void SetLightSource(QPointF lightSource);
 
     const std::vector<Polygon>& GetPolygons();
 
     void AddPolygon(const Polygon&);
 
-    void AddVertexToLastPolygon(const QPoint& new_vertex);
+    void AddVertexToLastPolygon(const QPointF& new_vertex);
 
-    void UpdateLastPolygon(const QPoint& new_vertex);
+    void UpdateLastPolygon(const QPointF& new_vertex);
 
     std::vector<Ray> CastRays();
 
@@ -48,7 +48,7 @@ public:
 
     Polygon CreateLightArea();
 
-    QPoint last_vertex = QPoint(-10, -10);
+    QPointF last_vertex = QPointF(-10, -10);
 
 
 
@@ -57,12 +57,16 @@ public:
 private slots:
     void ModeChanged();
 
-    void MouseMoveEvent(QPoint pos);
-    void MouseLeftClicked(QPoint pos);
-    void MouseRightClicked(QPoint pos);
+    void MouseMoveEvent(QPointF pos);
+    void MouseLeftClicked(QPointF pos);
+    void MouseRightClicked(QPointF pos);
+
+    double AngleBetweenPoints(const QPointF &p1, const QPointF &p2);
+
+    bool compareAngles(double angle1, double angle2);
 
 private:
-    QPoint light_source_;
+    QPointF light_source_;
     Mode mode_;
     bool is_right_clicked = true;
 

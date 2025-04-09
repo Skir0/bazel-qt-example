@@ -53,21 +53,53 @@ void PaintWidget::PaintPolygon(Polygon polygon) {
 void PaintWidget::ClearRaysBuffer() {
     rays_buffer_.fill(Qt::transparent);  // Clear previous rays
 }
-void PaintWidget::PaintRays(std::vector<Ray> rays) {
+// void PaintWidget::PaintRays(std::vector<Ray> rays) {
+//     if (rays_buffer_.isNull() || rays_buffer_.size() != size()) {
+//         rays_buffer_ = QPixmap(size());  // Recreate if invalid or wrong size
+//     }
+//     ClearRaysBuffer();
+//     QPainter bufferPainter(&rays_buffer_);
+//     if (!bufferPainter.isActive()) {
+//         qWarning() << "Failed to begin painting on rays_buffer_";
+//         return;
+//     }
+//
+//     bufferPainter.setPen(Qt::red);  // Make rays visible (e.g., red)
+//     for (const auto& ray : rays) {
+//         bufferPainter.drawLine(ray.GetBegin(), ray.GetEnd());
+//     }
+//     update();
+// }
+
+void PaintWidget::PaintRays(Polygon& polygon) {
     if (rays_buffer_.isNull() || rays_buffer_.size() != size()) {
         rays_buffer_ = QPixmap(size());  // Recreate if invalid or wrong size
     }
     ClearRaysBuffer();
     QPainter bufferPainter(&rays_buffer_);
-    if (!bufferPainter.isActive()) {
-        qWarning() << "Failed to begin painting on rays_buffer_";
+    QPen pen(Qt::red);
+    pen.setWidth(2);
+    bufferPainter.setPen(pen);
+    bufferPainter.setBrush(Qt::red);
+
+    std::vector<QPointF> vertices = polygon.GetVertices();
+
+    if (vertices.size() < 2) {
         return;
+
+    }
+    // Create a path to define the polygon
+    QPainterPath path;
+    path.moveTo(vertices[0]);
+
+    for (size_t i = 1; i < vertices.size(); ++i) {
+        path.lineTo(vertices[i]);
     }
 
-    bufferPainter.setPen(Qt::red);  // Make rays visible (e.g., red)
-    for (const auto& ray : rays) {
-        bufferPainter.drawLine(ray.GetBegin(), ray.GetEnd());
-    }
+    path.closeSubpath();
+
+    bufferPainter.drawPath(path);
+
     update();
 }
 

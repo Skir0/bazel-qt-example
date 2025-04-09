@@ -6,7 +6,6 @@
 #define POLYGON_H
 #include <vector>
 #include <QtCore/qmetatype.h>
-#include <QtCore/QPointF>
 
 #include "Ray.h"
 

@@ -48,7 +48,8 @@ public:
 
     Polygon CreateLightArea();
 
-    QPointF last_vertex = QPointF(-10, -10);
+    Ray FindNeighbourRay(QPointF vertex, double angle);
+
 
 
 
@@ -63,7 +64,8 @@ private slots:
 
     double AngleBetweenPoints(const QPointF &p1, const QPointF &p2);
 
-    bool compareAngles(double angle1, double angle2);
+    bool CompareAngles(double angle1, double angle2);
+
 
 private:
     QPointF light_source_;

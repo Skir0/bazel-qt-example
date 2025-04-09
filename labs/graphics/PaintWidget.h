@@ -16,7 +16,10 @@ public:
 
     void ClearRaysBuffer();
 
-    void PaintRays(std::vector<Ray> rays);
+    // void PaintRays(std::vector<Ray> rays);
+
+    void PaintRays(Polygon& polygon);
+
 
 
 

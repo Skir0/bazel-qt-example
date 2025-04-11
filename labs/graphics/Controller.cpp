@@ -2,11 +2,16 @@
 #include <iostream>
 #include <QtWidgets>
 
+
+const double compare_value = 0.00001;
+
+
 Controller::Controller() {
     // enable mouse tracking for the main window
     setMouseTracking(true);
 
-    QWidget *central_widget = new QWidget;
+    QWidget *central_widget = new QWidget();
+    central_widget = new QWidget();
     setCentralWidget(central_widget);
 
     mode_box_ = new QComboBox(central_widget);
@@ -15,7 +20,6 @@ Controller::Controller() {
     paint_widget_ = new PaintWidget(central_widget);
 
     // Install event filter on both the paint widget and the main window
-    // paint_widget_->installEventFilter(this);
 
     QVBoxLayout *mode_layout = new QVBoxLayout();
     QVBoxLayout *painter_layout = new QVBoxLayout();
@@ -32,12 +36,12 @@ Controller::Controller() {
 
     std::vector<QPointF> vertices;
     Polygon polygon({
-        QPointF(0, 0), QPointF(width(), 0),
-        QPointF(width(), height()), QPointF(0, height()),
+        QPointF(0, 0), QPointF(qApp->screens()[0]->size().width(), 0),
+        QPointF(qApp->screens()[0]->size().width(), qApp->screens()[0]->size().height()),
+        QPointF(0, qApp->screens()[0]->size().height()),
         QPointF(0, 0)
     });
     AddPolygon(polygon);
-    // paint_widget_->PaintPolygon(polygon);
 }
 
 QPointF Controller::GetLightSource() {
@@ -67,39 +71,36 @@ void Controller::UpdateLastPolygon(const QPointF &new_vertex) {
     // last_polygon = new_vertex;
 }
 
-std::vector<Ray> Controller::CastRays() {
+std::vector<Ray> Controller::CastRays(QPointF light_source) {
     std::vector<Ray> rays;
     for (auto polygon: polygons_) {
         std::vector<QPointF> vertices = polygon.GetVertices();
         for (QPointF &vertex: vertices) {
             // count angle
-            double angle = AngleBetweenPoints(vertex, light_source_);
-            // std::cout << angle << std::endl;
+            double angle = AngleBetweenPoints(vertex, light_source);
 
             // create rays
-            Ray ray1 = Ray(light_source_, vertex, angle);
+            Ray ray1 = Ray(light_source, vertex, angle);
             rays.push_back(ray1);
             // TODO fix logic with extra rays
-            // rays.push_back(FindNeighbourRay(vertex, angle + 0.0001));
-            // rays.push_back(FindNeighbourRay(vertex, angle - 0.0001));
+            // rays.push_back(FindNeighbourRay(angle + compare_value));
+            // rays.push_back(FindNeighbourRay(angle - compare_value));
         }
     }
     return rays;
 }
 
-void Controller::IntersectRays(std::vector<Ray> *rays) {
+void Controller::IntersectRays(std::vector<Ray> *rays, QPointF light_source) {
     for (auto polygon: polygons_) {
         for (auto &ray: *rays) {
             auto intersection_result = polygon.IntersectRay(ray);
             if (intersection_result != std::nullopt) {
                 if (Polygon::GetDistance(ray.GetBegin(), intersection_result.value()) <
                     Polygon::GetDistance(ray.GetBegin(), ray.GetEnd())) {
-                    double angle1 = AngleBetweenPoints(intersection_result.value(), light_source_);
-                    double angle2 = AngleBetweenPoints(ray.GetEnd(), light_source_);
+                    double angle1 = AngleBetweenPoints(intersection_result.value(), light_source);
+                    double angle2 = AngleBetweenPoints(ray.GetEnd(), light_source);
 
                     if (CompareAngles(angle1, angle2)) {
-                        std::cout << "comapare is good" << std::endl;
-                        std::cout << "angles " << angle1 << " " << angle2 << " " << ray.GetAngle() << std::endl;
                         ray.SetEnd(intersection_result.value());
                     }
                 }
@@ -111,55 +112,51 @@ void Controller::IntersectRays(std::vector<Ray> *rays) {
 void Controller::RemoveAdjacentRays(std::vector<Ray> *rays) {
 }
 
-Polygon Controller::CreateLightArea() {
-    std::vector<Ray> rays = CastRays();
-    IntersectRays(&rays);
+Polygon Controller::CreateLightArea(QPointF light_source) {
+    std::vector<Ray> rays = CastRays(light_source);
+    IntersectRays(&rays, light_source);
     // RemoveAdjacentRays(&rays);
 
-    // paint_widget_->PaintRays(rays);
     std::sort(rays.begin(), rays.end(), [](const Ray &ray1, const Ray &ray2) {
         return ray1.GetAngle() < ray2.GetAngle();
     });
-    std::cout << "sorted, size: " << rays.size() << std::endl;
-    for (auto ray: rays) {
-        std::cout << ray.GetAngle() << " ";
-    }
-    std::cout << std::endl;
+
     std::vector<QPointF> vertices;
     for (auto ray: rays) {
         vertices.push_back(ray.GetEnd());
     }
     vertices.push_back(vertices[0]);
-    // vertices.push_back(light_source_);
     return Polygon(vertices);
 }
 
 
 void Controller::ModeChanged() {
-    std::cout << "mode changed" << std::endl;
 
     if (mode_box_->currentIndex() == LIGHT) {
-        std::cout << "size of polygons: " << polygons_[0].GetVertices().size() << std::endl;
-        for (auto v: polygons_[0].GetVertices()) {
-            std::cout << v.x() << " " << v.y() << std::endl;
-        }
+
         if (!is_right_clicked) {
-            std::cout << "right click is pressed " << std::endl;
             AddVertexToLastPolygon(polygons_[polygons_.size() - 1].GetVertices()[0]);
             is_right_clicked = true;
         }
         // create a small red circle cursor
-        QPixmap pixmap(16, 16);
+        QPixmap pixmap(30, 30);
         pixmap.fill(Qt::transparent);
 
         QPainter painter(&pixmap);
         painter.setRenderHint(QPainter::Antialiasing);
         painter.setPen(Qt::red);
         painter.setBrush(Qt::red);
-        painter.drawEllipse(8, 8, 8, 8);
+        painter.drawEllipse(15, 15, 5, 5);
+
+        double radius = 10.0;
+        for (int i = 0; i < 10; ++i) {
+            // Вычисляем позицию дополнительного источника
+            double angle = 2 * M_PI * i / 10;
+            painter.drawEllipse(15 + radius * cos(angle), 15 + radius * sin(angle), 5, 5);
+        }
 
         // Set the cursor with hotspot at center
-        QCursor customCursor(pixmap, 8, 8);
+        QCursor customCursor(pixmap, 15, 15);
         setCursor(customCursor);
 
         mode_ = LIGHT;
@@ -173,30 +170,43 @@ void Controller::ModeChanged() {
 }
 
 void Controller::MouseMoveEvent(QPointF pos) {
-    // std::cout << "mouse moved " <<  pos.x() << " " << pos.y() << std::endl;
-    // std::cout << "angle " <<  CountAngle(QPointF(0, 0)) << std::endl;
-
     if (mode_ == LIGHT) {
         light_source_ = pos;
-        std::vector<Ray> rays = CastRays();
-        // IntersectRays(&rays);
-        // paint_widget_->PaintRays(rays);
-        Polygon polygon = CreateLightArea();
-        paint_widget_->PaintRays(polygon);
+
+        // Очищаем предыдущие лучи
+        paint_widget_->ClearRaysBuffer();
+
+        // Рисуем основной источник света
+        Polygon main_polygon = CreateLightArea(light_source_);
+        paint_widget_->PaintRays(main_polygon, QColor(255, 255, 255));
+
+        // Рисуем 10 дополнительных источников вокруг основного
+        const int additional_lights = 10;
+        const double radius = 7.0; // радиус круга, по которому расположены дополнительные источники
+        double color_id = 235;
+        for (int i = 0; i < additional_lights; ++i) {
+            // Вычисляем позицию дополнительного источника
+            double angle = 2 * M_PI * i / additional_lights;
+            QPointF offset(radius * cos(angle), radius * sin(angle));
+            QPointF secondary_light = light_source_ + offset;
+
+            // Создаем и рисуем область света для дополнительного источника
+            Polygon secondary_polygon = CreateLightArea(secondary_light);
+            paint_widget_->PaintRays(secondary_polygon, QColor(color_id, color_id, color_id));
+            // paint_widget_->PaintSecondaryLightSource(secondary_light);
+            color_id -= 20;
+        }
     }
 }
 
 void Controller::MouseLeftClicked(QPointF pos) {
     if (mode_ == POLYGONS) {
-        std::cout << pos.x() << " " << pos.y() << std::endl;
         if (is_right_clicked) {
-            std::cout << "start" << std::endl;
             Polygon polygon;
             AddPolygon(polygon);
             is_right_clicked = false;
         }
         AddVertexToLastPolygon(pos);
-        std::cout << "add: " << pos.x() << " " << pos.y() << std::endl;
         paint_widget_->PaintPolygon(polygons_[polygons_.size() - 1]);
     }
 }
@@ -205,93 +215,116 @@ void Controller::MouseRightClicked(QPointF pos) {
     if (mode_ == POLYGONS) {
         AddVertexToLastPolygon(polygons_[polygons_.size() - 1].GetVertices()[0]);
         is_right_clicked = true;
-        std::cout << "light " << light_source_.x() << " " << light_source_.y() << std::endl;
-    }
-    if (mode_ == LIGHT) {
-        auto rays = CastRays();
-        std::sort(rays.begin(), rays.end(), [](const Ray &ray1, const Ray &ray2) {
-            return ray1.GetAngle() < ray2.GetAngle();
-        });
-        std::cout << "sorted, size: " << rays.size() << std::endl;
-        for (auto ray: rays) {
-            std::cout << ray.GetAngle() << " ";
-        }
-        // paint_widget_->PaintRays(rays);
     }
 }
 
 double Controller::AngleBetweenPoints(const QPointF &p1, const QPointF &p2) {
     double dx = p2.x() - p1.x();
     double dy = p2.y() - p1.y();
-    std::cout << "what i need: " << qRadiansToDegrees(qAtan2(10, 0)) << std::endl;
-    std::cout << "what i need: " << qRadiansToDegrees(qAtan2(0, -10)) << std::endl;
-    std::cout << "what i need: " << qRadiansToDegrees(qAtan2(-10, 0)) << std::endl;
-    std::cout << "what i need: " << qRadiansToDegrees(qAtan2(-10, 10)) << std::endl;
 
-    return qRadiansToDegrees(qAtan2(dy, dx));
+    return qAtan2(dy, dx);
 }
 
 bool Controller::CompareAngles(double angle1, double angle2) {
     double diff = qAbs(angle1 - angle2);
-    diff = qMin(diff, 360.0 - diff);
-    return diff <= 0.00001;
+    diff = qMin(diff, 6.28 - diff);
+    return diff <= compare_value;
 }
 
-Ray Controller::FindNeighbourRay(QPointF vertex, double angle1) {
-    const double epsilon = 0.1;
+Ray Controller::FindNeighbourRay(double angle_radians) {
+    QPointF direction(qCos(angle_radians), qSin(angle_radians));
 
+    // Get the boundaries of the drawing area
+    const double left = 0;
+    const double right = width();
+    const double top = 0;
+    const double bottom = height();
 
-    auto createBoundedRay = [this](double rayAngle) -> Ray {
-        double radians = qDegreesToRadians(rayAngle);
+    // Variables to store potential intersection points and their distances
+    QPointF closest_intersection;
+    double min_distance = std::numeric_limits<double>::max();
+    bool found_intersection = false;
 
-        // Calculate direction vector
-        QPointF direction(qCos(radians), qSin(radians));
-
-        double left = 0;
-        double right = width();
-        double top = 0;
-        double bottom = height();
-
-
-        double t, x, y;
-        QPointF intersection;
-
-        // Check intersection with right edge (x = right)
-        t = (right - light_source_.x()) / direction.x();
-        y = light_source_.y() + t * direction.y();
-        if (y >= top && y <= bottom) {
-            intersection = QPointF(right, y);
-            return Ray(light_source_, intersection, rayAngle);
+    // Calculate intersection parameters for each boundary
+    // Right boundary (x = right)
+    if (direction.x() > compare_value) {
+        // Moving right
+        double t = (right - light_source_.x()) / direction.x();
+        if (t > 0) {
+            double y = light_source_.y() + t * direction.y();
+            if (y >= top && y <= bottom) {
+                QPointF intersection(right, y);
+                double dist = Polygon::GetDistance(light_source_, intersection);
+                if (dist < min_distance) {
+                    min_distance = dist;
+                    closest_intersection = intersection;
+                    found_intersection = true;
+                }
+            }
         }
-
-        // Check intersection with left edge (x = left)
-        t = (left - light_source_.x()) / direction.x();
-        y = light_source_.y() + t * direction.y();
-        if (y >= top && y <= bottom) {
-            intersection = QPointF(left, y);
-            return Ray(light_source_, intersection, rayAngle);
+    }
+    // Left boundary (x = left)
+    else if (direction.x() < -compare_value) {
+        // Moving left
+        double t = (left - light_source_.x()) / direction.x();
+        if (t > 0) {
+            double y = light_source_.y() + t * direction.y();
+            if (y >= top && y <= bottom) {
+                QPointF intersection(left, y);
+                double dist = Polygon::GetDistance(light_source_, intersection);
+                if (dist < min_distance) {
+                    min_distance = dist;
+                    closest_intersection = intersection;
+                    found_intersection = true;
+                }
+            }
         }
+    }
 
-        // Check intersection with top edge (y = top)
-        t = (top - light_source_.y()) / direction.y();
-        x = light_source_.x() + t * direction.x();
-        if (x >= left && x <= right) {
-            intersection = QPointF(x, top);
-            return Ray(light_source_, intersection, rayAngle);
+    // Top boundary (y = top)
+    if (direction.y() < -compare_value) {
+        // Moving up
+        double t = (top - light_source_.y()) / direction.y();
+        if (t > 0) {
+            double x = light_source_.x() + t * direction.x();
+            if (x >= left && x <= right) {
+                QPointF intersection(x, top);
+                double dist = Polygon::GetDistance(light_source_, intersection);
+                if (dist < min_distance) {
+                    min_distance = dist;
+                    closest_intersection = intersection;
+                    found_intersection = true;
+                }
+            }
         }
-
-        // Check intersection with bottom edge (y = bottom)
-        t = (bottom - light_source_.y()) / direction.y();
-        x = light_source_.x() + t * direction.x();
-        if (x >= left && x <= right) {
-            intersection = QPointF(x, bottom);
-            return Ray(light_source_, intersection, rayAngle);
+    }
+    // Bottom boundary (y = bottom)
+    else if (direction.y() > compare_value) {
+        // Moving down
+        double t = (bottom - light_source_.y()) / direction.y();
+        if (t > 0) {
+            double x = light_source_.x() + t * direction.x();
+            if (x >= left && x <= right) {
+                QPointF intersection(x, bottom);
+                double dist = Polygon::GetDistance(light_source_, intersection);
+                if (dist < min_distance) {
+                    min_distance = dist;
+                    closest_intersection = intersection;
+                    found_intersection = true;
+                }
+            }
         }
+    }
 
-        return Ray(light_source_, light_source_ + direction * 1000, rayAngle);
-    };
+    if (!found_intersection) {
+        // If no intersections found (shouldn't happen for valid angles)
+        // Return a ray with a large length
+        return Ray(light_source_,
+                   light_source_ + direction * qMax(width(), height()) * 2,
+                   angle_radians);
+    }
 
-    return createBoundedRay(angle1);
+    return Ray(light_source_, closest_intersection, angle_radians);
 }
 
 
@@ -299,8 +332,7 @@ Controller::~Controller() {
 }
 
 void Controller::CreateActions() {
-    connect(mode_box_, &QComboBox::currentIndexChanged,
-            this, &Controller::ModeChanged);
+    connect(mode_box_, &QComboBox::currentIndexChanged, this, &Controller::ModeChanged);
     connect(paint_widget_, &PaintWidget::mouseMoved, this, &Controller::MouseMoveEvent);
     connect(paint_widget_, &PaintWidget::leftClicked, this, &Controller::MouseLeftClicked);
     connect(paint_widget_, &PaintWidget::rightClicked, this, &Controller::MouseRightClicked);

@@ -18,9 +18,9 @@ public:
 
     // void PaintRays(std::vector<Ray> rays);
 
-    void PaintRays(Polygon& polygon);
+    void PaintRays(Polygon& polygon, QColor color);
 
-
+    void PaintSecondaryLightSource(QPointF light_source);
 
 
 signals:

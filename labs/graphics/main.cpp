@@ -2,7 +2,6 @@
 #include <QtWidgets>
 
 #include "Controller.h"
-#include "PaintWidget.h"
 
 
 int main(int argc, char** argv) {
@@ -11,6 +10,6 @@ int main(int argc, char** argv) {
     Controller controller;
     controller.show();
     controller.setWindowTitle("Мои напоминания");
-    controller.resize(400, 500);
+    controller.resize(500, 500);
     return a.exec();
 }

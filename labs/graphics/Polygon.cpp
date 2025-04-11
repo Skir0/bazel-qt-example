@@ -2,16 +2,6 @@
 
 #include <iostream>
 
-bool Polygon::IsVertexIncluded(QPointF p1, QPointF p2, QPointF possible_included) {
-    const double epsilon = 1e-10;
-    double a1 = p2.y() - p1.y();
-    double b1 = p1.x() - p2.x();
-    double c1 = p1.y() * p2.x() - p1.x() * p2.y();
-    if (a1 * possible_included.x() + b1 * possible_included.y() + c1 < epsilon) {
-        return true;
-    }
-    return false;
-}
 
 bool Polygon::IsIntersected(QPointF p1, QPointF p2, QPointF p3, QPointF p4, QPointF &intersection) {
     const double epsilon = 1e-10;

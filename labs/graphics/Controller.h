@@ -3,6 +3,8 @@
 #define CONTROLLER_H
 
 #include <qmainwindow.h>
+#include <QtGui/qpainter.h>
+
 #include "Polygon.h"
 #include "PaintWidget.h"
 
@@ -40,15 +42,15 @@ public:
 
     void UpdateLastPolygon(const QPointF& new_vertex);
 
-    std::vector<Ray> CastRays();
+    std::vector<Ray> CastRays(QPointF light_source);
 
-    void IntersectRays(std::vector<Ray>* rays);
+    void IntersectRays(std::vector<Ray>* rays, QPointF light_source);
 
     void RemoveAdjacentRays(std::vector<Ray>* rays);
 
-    Polygon CreateLightArea();
+    Polygon CreateLightArea(QPointF light_source);
 
-    Ray FindNeighbourRay(QPointF vertex, double angle);
+    Ray FindNeighbourRay(double angle);
 
 
 

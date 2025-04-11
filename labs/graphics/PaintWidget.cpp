@@ -14,9 +14,9 @@ PaintWidget::PaintWidget(QWidget *parent) : QWidget(parent) {
 
 void PaintWidget::initializeBuffer() {
     // TODO fix size
-    polygons_buffer_ = QPixmap(QSize(800, 600));
-    polygons_buffer_.fill(Qt::white); // Clear with background color
-    rays_buffer_ = QPixmap(size());  // Initialize rays_buffer_
+    polygons_buffer_ = QPixmap(qApp->screens()[0]->size());
+    polygons_buffer_.fill(Qt::black); // Clear with background color
+    rays_buffer_ = QPixmap();  // Initialize rays_buffer_
     rays_buffer_.fill(Qt::transparent);
 }
 
@@ -24,7 +24,7 @@ void PaintWidget::initializeBuffer() {
 void PaintWidget::PaintPolygon(Polygon polygon) {
     QPainter bufferPainter(&polygons_buffer_);
 
-    QPen pen(Qt::black);
+    QPen pen(Qt::yellow);
     pen.setWidth(2);
     bufferPainter.setPen(pen);
     bufferPainter.setBrush(Qt::black);
@@ -53,34 +53,19 @@ void PaintWidget::PaintPolygon(Polygon polygon) {
 void PaintWidget::ClearRaysBuffer() {
     rays_buffer_.fill(Qt::transparent);  // Clear previous rays
 }
-// void PaintWidget::PaintRays(std::vector<Ray> rays) {
-//     if (rays_buffer_.isNull() || rays_buffer_.size() != size()) {
-//         rays_buffer_ = QPixmap(size());  // Recreate if invalid or wrong size
-//     }
-//     ClearRaysBuffer();
-//     QPainter bufferPainter(&rays_buffer_);
-//     if (!bufferPainter.isActive()) {
-//         qWarning() << "Failed to begin painting on rays_buffer_";
-//         return;
-//     }
-//
-//     bufferPainter.setPen(Qt::red);  // Make rays visible (e.g., red)
-//     for (const auto& ray : rays) {
-//         bufferPainter.drawLine(ray.GetBegin(), ray.GetEnd());
-//     }
-//     update();
-// }
 
-void PaintWidget::PaintRays(Polygon& polygon) {
+void PaintWidget::PaintRays(Polygon& polygon, QColor color) {
     if (rays_buffer_.isNull() || rays_buffer_.size() != size()) {
         rays_buffer_ = QPixmap(size());  // Recreate if invalid or wrong size
     }
-    ClearRaysBuffer();
+    // ClearRaysBuffer();
     QPainter bufferPainter(&rays_buffer_);
-    QPen pen(Qt::red);
-    pen.setWidth(2);
-    bufferPainter.setPen(pen);
-    bufferPainter.setBrush(Qt::red);
+
+    bufferPainter.setCompositionMode(QPainter::CompositionMode_Plus);
+
+    QColor translucentColor = color;
+    translucentColor.setAlpha(100); // Можно регулировать прозрачность
+    bufferPainter.setBrush(translucentColor);
 
     std::vector<QPointF> vertices = polygon.GetVertices();
 
@@ -101,6 +86,8 @@ void PaintWidget::PaintRays(Polygon& polygon) {
     bufferPainter.drawPath(path);
 
     update();
+
+
 }
 
 
@@ -111,6 +98,7 @@ void PaintWidget::paintEvent(QPaintEvent *event) {
     painter.drawPixmap(0, 0, polygons_buffer_);
 
     painter.drawPixmap(0, 0, rays_buffer_);
+
 
 }
 

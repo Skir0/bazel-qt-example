@@ -1,6 +1,7 @@
 #include "Controller.h"
 #include <iostream>
 #include <QtWidgets>
+#include <QApplication>
 
 
 const double compare_value = 0.0001;

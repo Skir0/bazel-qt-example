@@ -1,4 +1,5 @@
 #include "PaintWidget.h"
+#include <QApplication>
 
 #include <iostream>
 #include <qstatusbar.h>

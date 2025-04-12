@@ -57,6 +57,7 @@ Polygon::Polygon(const std::vector<QPointF> &vertices) {
 }
 
 std::vector<QPointF> Polygon::GetVertices() {
+
     return vertices_;
 }
 

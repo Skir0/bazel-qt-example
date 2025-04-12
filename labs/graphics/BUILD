@@ -56,7 +56,7 @@ qt_cc_library(
 
 # Main binary
 qt_cc_binary(
-    name = "graphics",
+    name = "raycaster",
     srcs = ["main.cpp"],
     deps = [
         ":controller_lib",

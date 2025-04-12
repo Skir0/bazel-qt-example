@@ -30,6 +30,7 @@ public:
 
     bool IsIntersected(QPointF p1, QPointF p2, QPointF p3, QPointF p4, QPointF &intersection);
 
+
 private:
     std::vector<QPointF> vertices_;
     QPointF last_vertex_ = QPointF(-10, -10);

@@ -20,7 +20,8 @@ public:
 
     void PaintRays(Polygon& polygon, QColor color);
 
-    void PaintSecondaryLightSource(QPointF light_source);
+    void DrawRays(const QPointF& lightSource, const std::vector<Ray>& rays);
+
 
 
 signals:
@@ -38,6 +39,8 @@ private:
     // buffers
     QPixmap polygons_buffer_;  // Stores all drawings
     QPixmap rays_buffer_;  // Stores all drawings
+    QPixmap rays_lines_buffer_; // New buffer for ray lines
+
 
     void initializeBuffer();
 

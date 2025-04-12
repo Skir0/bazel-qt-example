@@ -19,6 +19,7 @@ QT_END_NAMESPACE
 
 
 class Controller: public QMainWindow {
+    Q_OBJECT
 
     enum Mode: uint8_t {
         LIGHT,
@@ -50,12 +51,9 @@ public:
 
     Polygon CreateLightArea(QPointF light_source);
 
-    Ray FindNeighbourRay(double angle);
+    Ray FindNeighbourRay(QPointF light_source, double angle_radians);
 
-
-
-
-
+    bool IsValidPoint(QPointF found_point, QPointF p0, QPointF p1);
 
 private slots:
     void ModeChanged();
